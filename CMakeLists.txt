@@ -1,5 +1,19 @@
 cmake_minimum_required(VERSION 3.10.0)
 project(CHttpDownloader VERSION 0.1.0 LANGUAGES C)
 
-add_executable(CHttpDownloader main.c)
+set(CMAKE_C_STANDARD 11)
 
+include_directories(include)
+
+set(SOURCE_FILES 
+    src/download.c
+    src/http.c
+    src/parser.c
+    src/utils.c
+    src/progress.c
+    src/net.c
+    src/utils.c
+    test.c
+)
+add_executable(CHttpDownloader ${SOURCE_FILES})
+add_executable(test ${SOURCE_FILES})

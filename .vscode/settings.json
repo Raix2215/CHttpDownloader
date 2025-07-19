@@ -1,6 +1,32 @@
 {
   "files.associations": {
     "*.vue": "vue",
-    "common.h": "c"
-  }
+    "common.h": "c",
+    "unistd.h": "c",
+    "inet.h": "c",
+    "in.h": "c",
+    "netdb.h": "c",
+    "url_parser.h": "c",
+    "bit": "c",
+    "compare": "c",
+    "cstddef": "c",
+    "string": "c",
+    "limits": "c",
+    "memory": "c",
+    "new": "c",
+    "functional": "c",
+    "types.h": "c",
+    "stdlib.h": "c",
+    "stdio.h": "c",
+    "download.h": "c",
+    "socket.h": "c",
+    "parser.h": "c",
+    "time.h": "c",
+    "ctype.h": "c",
+    "http.h": "c",
+    "progress.h": "c",
+    "utils.h": "c",
+    "stat.h": "c"
+  },
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }
