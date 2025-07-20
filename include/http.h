@@ -43,14 +43,15 @@ int process_header_field(const char* name, const char* value, HttpResponseInfo* 
  */
 int parse_http_response_headers(int sockfd, HttpResponseInfo* response_info, HttpReadBuffer* remaining_buffer);
 
+
 /**
- * HTTP文件下载函数
- * @param url 下载URL
- * @param output_filename 输出文件名（不包含路径）
- * @param download_dir 下载目录，如果为NULL或空字符串则使用当前工作目录
- * @param redirect_count 重定向计数（内部使用）
- * @return 下载结果状态码
+ * 构建HTTP GET请求
+ * @param host 主机名
+ * @param path 请求路径
+ * @param buffer 输出缓冲区
+ * @param buffer_size 缓冲区大小
+ * @return 成功返回请求长度，失败返回-1
  */
-int download_file_http(const char* url, const char* output_filename, const char* download_dir, int redirect_count);
+int build_http_get_request(const char* host, const char* path, char* buffer, size_t buffer_size);
 
 #endif

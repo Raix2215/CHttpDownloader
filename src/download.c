@@ -235,14 +235,24 @@ int download_content_until_close(int sockfd, FILE* output_file, DownloadProgress
   return 0;
 }
 int download_file_http(const char* url, const char* output_filename, const char* download_dir, int redirect_count) {
+
+  // CLI颜色定义
+  const char* BLUE = "\033[34m";
+  const char* CYAN = "\033[36m";
+  const char* YELLOW = "\033[33m";
+  const char* RESET = "\033[0m";
+  const char* BOLD = "\033[1m";
+  const char* RED = "\033[31m";
+  const char* GREEN = "\033[32m";
+
   const int MAX_REDIRECTS = 10;
   const char* current_url = url;
   char redirect_url[2048];
-  char full_output_path[4096];  // 存储完整的输出路径
+  char full_output_path[4096];  // 完整输出路径
 
-  // 构造完整的输出文件路径
+  // 构造完整输出文件路径
   if (!output_filename) {
-    fprintf(stderr, "错误: 输出文件名不能为空\n");
+    fprintf(stderr, "%s错误: 输出文件名不能为空%s\n", RED, RESET);
     return DOWNLOAD_ERROR_URL_PARSE;
   }
 
@@ -250,7 +260,7 @@ int download_file_http(const char* url, const char* output_filename, const char*
   if (!download_dir || strlen(download_dir) == 0) {
     char current_dir[PATH_MAX];
     if (getcwd(current_dir, sizeof(current_dir)) == NULL) {
-      fprintf(stderr, "错误: 无法获取当前工作目录: %s\n", strerror(errno));
+      fprintf(stderr, "%s错误: 无法获取当前工作目录: %s%s\n", RED, strerror(errno), RESET);
       return DOWNLOAD_ERROR_FILE_OPEN;
     }
     snprintf(full_output_path, sizeof(full_output_path), "%s/%s", current_dir, output_filename);
@@ -259,11 +269,11 @@ int download_file_http(const char* url, const char* output_filename, const char*
     // 检查下载目录是否存在
     struct stat dir_stat;
     if (stat(download_dir, &dir_stat) != 0) {
-      fprintf(stderr, "错误: 下载目录不存在: %s\n", download_dir);
+      fprintf(stderr, "%s错误: 下载目录不存在: %s%s\n", RED, download_dir, RESET);
       return DOWNLOAD_ERROR_FILE_OPEN;
     }
     if (!S_ISDIR(dir_stat.st_mode)) {
-      fprintf(stderr, "错误: 指定的路径不是目录: %s\n", download_dir);
+      fprintf(stderr, "%s错误: 指定的路径不是目录: %s%s\n", RED, download_dir, RESET);
       return DOWNLOAD_ERROR_FILE_OPEN;
     }
 
@@ -276,7 +286,7 @@ int download_file_http(const char* url, const char* output_filename, const char*
     }
   }
 
-  printf("下载文件将保存到: %s\n", full_output_path);
+  printf("%s下载文件将保存到: %s%s%s%s\n", BOLD, RESET, BLUE, full_output_path, RESET);
 
   for (int redirect_iter = 0; redirect_iter <= MAX_REDIRECTS; redirect_iter++) {
     // 变量初始化
@@ -289,44 +299,44 @@ int download_file_http(const char* url, const char* output_filename, const char*
     DownloadResult result = DOWNLOAD_SUCCESS;
 
     if (!current_url) {
-      fprintf(stderr, "错误: 无效的URL\n");
+      fprintf(stderr, "%s错误: 无效的URL%s\n", RED, RESET);
       return DOWNLOAD_ERROR_URL_PARSE;
     }
 
     // URL解析
     // printf("正在解析URL: %s\n", current_url);
     if (parse_url(current_url, &url_info) != 0) {
-      fprintf(stderr, "错误: 无法解析URL\n");
+      fprintf(stderr, "%s错误: 无法解析URL%s\n", RED, RESET);
       return DOWNLOAD_ERROR_URL_PARSE;
     }
-    printf("Host: %s, Port: %d, Path: %s\n", url_info.host, url_info.port, url_info.path);
+    printf("%sHost: %s%s%s%s, %sPort: %s%s%d%s, %sPath: %s%s%s%s\n", BOLD, RESET, BLUE, url_info.host, RESET, BOLD, RESET, BLUE, url_info.port, RESET, BOLD, RESET, BLUE, url_info.path, RESET);
 
     char ip_str[INET_ADDRSTRLEN];
 
     // 域名解析
     if (url_info.host_type == UNALLOWED) {
-      printf("错误：无效的域名\n");
+      printf("%s错误：无效的域名%s\n", RED, RESET);
       return DOWNLOAD_ERROR_DNS_RESOLVE;
     }
     else if (url_info.host_type == DOMAIN) {
       // printf("正在解析域名: %s\n", url_info.host);
       if (resolve_hostname(url_info.host, ip_str, sizeof(ip_str)) != 0) {
-        fprintf(stderr, "错误: 域名解析失败\n");
+        fprintf(stderr, "%s错误: 域名解析失败%s\n", RED, RESET);
         return DOWNLOAD_ERROR_DNS_RESOLVE;
       }
-      printf("HostIP: %s\n", ip_str);
+      printf("%sHostIP: %s%s%s%s\n", BOLD, RESET, BLUE, ip_str, RESET);
     }
     else {
       strncpy(ip_str, url_info.host, sizeof(ip_str) - 1);
       ip_str[sizeof(ip_str) - 1] = '\0';
-      printf("HostIP: %s\n", ip_str);
+      printf("%sHostIP: %s%s%s%s\n", BOLD, RESET, BLUE, ip_str, RESET);
     }
 
     // 建立TCP连接
     // printf("正在连接服务器...\n");
     sockfd = create_tcp_connection(ip_str, url_info.port);
     if (sockfd < 0) {
-      fprintf(stderr, "错误: 无法连接到服务器\n");
+      fprintf(stderr, "%s错误: 无法连接到服务器%s\n", RED, RESET);
       return DOWNLOAD_ERROR_CONNECTION;
     }
     // printf("连接建立成功\n");
@@ -335,14 +345,14 @@ int download_file_http(const char* url, const char* output_filename, const char*
     char request_buffer[REQUEST_BUFFER];
     int request_length = build_http_get_request(url_info.host, url_info.path, request_buffer, sizeof(request_buffer));
     if (request_length <= 0) {
-      fprintf(stderr, "错误: 构造HTTP请求失败\n");
+      fprintf(stderr, "%s错误: 构造HTTP请求失败%s\n", RED, RESET);
       result = DOWNLOAD_ERROR_HTTP_REQUEST;
       goto cleanup_iteration;
     }
 
     // printf("正在发送HTTP请求...\n");
     if (send_full_data(sockfd, request_buffer, request_length) != 0) {
-      fprintf(stderr, "错误: 发送HTTP请求失败\n");
+      fprintf(stderr, "%s错误: 发送HTTP请求失败%s\n", RED, RESET);
       result = DOWNLOAD_ERROR_HTTP_REQUEST;
       goto cleanup_iteration;
     }
@@ -350,24 +360,24 @@ int download_file_http(const char* url, const char* output_filename, const char*
     // 解析http响应头
     // printf("正在接收响应...\n");
     if (parse_http_response_headers(sockfd, &response_info, &remaining_buffer) != 0) {
-      fprintf(stderr, "错误: 解析HTTP响应失败\n");
+      fprintf(stderr, "%s错误: 解析HTTP响应失败%s\n", RED, RESET);
       result = DOWNLOAD_ERROR_HTTP_RESPONSE;
       goto cleanup_iteration;
     }
 
-    printf("HTTP状态: %d %s\n", response_info.status_code, response_info.status_message);
+    printf("%sHTTP状态:%s %d %s\n", BOLD, RESET, response_info.status_code, response_info.status_message);
 
     // 处理重定向
     if (determine_status_action(response_info.status_code) == STATUS_ACTION_REDIRECT) {
       if (redirect_iter >= MAX_REDIRECTS) {
-        fprintf(stderr, "错误: 重定向次数过多 (超过%d次)\n", MAX_REDIRECTS);
+        fprintf(stderr, "%s错误: 重定向次数过多 (超过%d次)%s\n", RED, MAX_REDIRECTS, RESET);
         result = DOWNLOAD_ERROR_HTTP_RESPONSE;
         goto cleanup_iteration;
       }
 
-      printf("警告: 服务器返回重定向状态码 %d\n", response_info.status_code);
+      printf("%s警告: 服务器返回重定向状态码 %d%s\n", YELLOW, response_info.status_code, RESET);
       if (response_info.location[0]) {
-        printf("重定向到: %s (第%d次重定向)\n", response_info.location, redirect_iter + 1);
+        printf("%s重定向到: %s (第%d次重定向)%s\n", YELLOW, response_info.location, redirect_iter + 1, RESET);
         printf("-------------------------重定向第(%d)次--------------------------\n", redirect_iter + 1);
 
         // 保存重定向URL
@@ -385,7 +395,7 @@ int download_file_http(const char* url, const char* output_filename, const char*
         continue;
       }
       else {
-        fprintf(stderr, "错误: 重定向但没有提供Location头\n");
+        fprintf(stderr, "%s错误: 重定向但没有提供Location头%s\n", RED, RESET);
         result = DOWNLOAD_ERROR_HTTP_RESPONSE;
         goto cleanup_iteration;
       }
@@ -393,31 +403,31 @@ int download_file_http(const char* url, const char* output_filename, const char*
 
     // 处理错误状态码
     if (determine_status_action(response_info.status_code) == STATUS_ACTION_ERROR) {
-      fprintf(stderr, "错误: 服务器返回错误状态码 %d\n", response_info.status_code);
+      fprintf(stderr, "%s错误: 服务器返回错误状态码 %d%s\n", RED, response_info.status_code, RESET);
       result = DOWNLOAD_ERROR_HTTP_RESPONSE;
       goto cleanup_iteration;
     }
 
     // 显示文件信息
     if (response_info.content_length > 0) {
-      printf("文件大小: %s\n", format_file_size(response_info.content_length));
+      printf("%s文件大小: %s%s%lld%s\n", BOLD, RESET, BLUE, (response_info.content_length), RESET);
     }
     else {
-      printf("文件大小: 未知\n");
+      printf("%s文件大小: %s%s未知%s\n", BOLD, RESET, YELLOW, RESET);
     }
     if (response_info.content_type[0]) {
-      printf("文件类型: %s\n", response_info.content_type);
+      printf("%s文件类型: %s%s%s%s\n", BOLD, RESET, BLUE, response_info.content_type, RESET);
     }
 
     // 打开输出文件（使用完整路径）
     output_file = fopen(full_output_path, "wb");
     if (!output_file) {
-      fprintf(stderr, "错误: 无法创建输出文件 %s: %s\n", full_output_path, strerror(errno));
+      fprintf(stderr, "%s错误: 无法创建输出文件 %s: %s%s\n", RED, full_output_path, strerror(errno), RESET);
       result = DOWNLOAD_ERROR_FILE_OPEN;
       goto cleanup_iteration;
     }
 
-    printf("开始下载到文件: %s\n", full_output_path);
+    printf("%s开始下载到文件: %s%s%s%s\n", BOLD, RESET, BLUE, full_output_path, RESET);
 
     // 下载内容
     if (response_info.content_length > 0) {
@@ -425,7 +435,7 @@ int download_file_http(const char* url, const char* output_filename, const char*
       if (download_content_with_length(sockfd, output_file,
         response_info.content_length,
         &progress, &remaining_buffer) != 0) {
-        fprintf(stderr, "错误: 下载过程中发生错误\n");
+        fprintf(stderr, "%s错误: 下载过程中发生错误%s\n", RED, RESET);
         result = DOWNLOAD_ERROR_NETWORK;
         goto cleanup_iteration;
       }
@@ -433,7 +443,7 @@ int download_file_http(const char* url, const char* output_filename, const char*
     else {
       // 未知长度的下载
       if (download_content_until_close(sockfd, output_file, &progress, &remaining_buffer) != 0) {
-        fprintf(stderr, "错误: 下载过程中发生错误\n");
+        fprintf(stderr, "%s错误: 下载过程中发生错误%s\n", RED, RESET);
         result = DOWNLOAD_ERROR_NETWORK;
         goto cleanup_iteration;
       }
@@ -452,7 +462,7 @@ int download_file_http(const char* url, const char* output_filename, const char*
       // 如果下载失败，删除不完整的文件
       if (result != DOWNLOAD_SUCCESS) {
         if (remove(full_output_path) == 0) {
-          printf("已删除不完整的文件: %s\n", full_output_path);
+          printf("%s已删除不完整的文件: %s\n%s", YELLOW, full_output_path, RESET);
         }
       }
     }
@@ -465,7 +475,7 @@ int download_file_http(const char* url, const char* output_filename, const char*
   }
 
   // 重定向次数过多
-  fprintf(stderr, "错误: 重定向次数过多\n");
+  fprintf(stderr, "%s错误: 重定向次数过多%s\n", RED, RESET);
   return DOWNLOAD_ERROR_HTTP_RESPONSE;
 }
 
