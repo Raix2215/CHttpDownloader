@@ -1,6 +1,7 @@
-#include "./include/common.h"
+#include "../include/common.h"
 #include "../include/parser.h"
 #include "../include/download.h"
+
 void url_parse_test() {
   const char* test_urls[] = {
     "http://example.com/path/to/resource",
@@ -41,12 +42,12 @@ void download_test() {
     "http://192.168.2.135/",
     "http://baidu.com/index.html",
     "http://www.scu.edu.cn/",
+    "http://www.google.com/index.html",
+    "http://hkg.download.datapacket.com/100mb.bin",
     // "http://202.115.47.141/login",
     // "192.168.10.1:8080",
-    "http://www.google.com/index.html",
     // "josdjfisdijiknwikrnikenikvjikrghejortrvwntybevrnvginretingvegivuynetriugvujeirugjmvkurcg4oirtgnertgoihmjfjhgiu.com",
     // "192.168.255.123",
-    "http://hkg.download.datapacket.com/100mb.bin",
     NULL
   };
   for (int i = 0; test_urls[i]; i++) {
@@ -60,17 +61,4 @@ void download_test() {
     printf("----------------------------下载完成----------------------------\n");
     free(info);
   }
-}
-int main() {
-  printf(
-    "\n"
-    "   ________  ____  __        ____                      __                __         \n"
-    "  / ____/ / / / /_/ /_____  / __ \\____ _      ______  / /___  ____ _____/ /__  _____\n"
-    " / /   / /_/ / __/ __/ __ \\/ / / / __ \\ | /| / / __ \\/ / __ \\/ __ \\/ __  / _ \\/ ___/\n"
-    "/ /___/ __  / /_/ /_/ /_/ / /_/ / /_/ / |/ |/ / / / / / /_/ / /_/ / /_/ /  __/ /    \n"
-    "\\____/_/ /_/\\__/\\__/ .___/_____/\\____/|__/|__/_/ /_/_/\\____/\\__,_/\\__,_/\\___/_/     \n"
-    "                  /_/                                                               \n"
-  );
-  download_test();
-  return 0;
 }

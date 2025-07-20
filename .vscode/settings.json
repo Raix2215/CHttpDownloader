@@ -26,7 +26,10 @@
     "http.h": "c",
     "progress.h": "c",
     "utils.h": "c",
-    "stat.h": "c"
+    "stat.h": "c",
+    "menu.h": "c",
+    "settings.h": "c",
+    "test.h": "c"
   },
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

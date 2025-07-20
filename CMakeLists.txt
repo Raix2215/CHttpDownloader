@@ -12,8 +12,10 @@ set(SOURCE_FILES
     src/utils.c
     src/progress.c
     src/net.c
-    src/utils.c
-    test.c
+    src/test.c
+    src/menu.c
+    src/settings.c
+
+    main.c
 )
 add_executable(CHttpDownloader ${SOURCE_FILES})
-add_executable(test ${SOURCE_FILES})
