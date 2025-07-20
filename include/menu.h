@@ -30,23 +30,13 @@ int choice_download();
 int choice_settings();
 
 /**
- * 文件下载入口函数
+ * 自动选择协议进行文件下载（支持多线程）
  * @param url 下载URL
  * @param output_filename 输出文件名
  * @param download_dir 下载目录
- * @param redirect_count 重定向计数
- * @return 下载结果状态码
+ * @param use_multithread 是否使用多线程下载（1启用，0禁用）
+ * @return 下载结果代码
  */
-int download_file_auto(const char* url, const char* output_filename, const char* download_dir, int redirect_count);
-
-
-/**
- * 检查并转换特殊的下载URL
- * @param original_url 原始URL
- * @param converted_url 转换后的URL
- * @param url_size 缓冲区大小
- * @return 1-进行了转换，0-无需转换
- */
-int convert_special_download_url(const char* original_url, char* converted_url, size_t url_size);
+int download_file_auto(const char* url, const char* output_filename, const char* download_dir, int use_multithread);
 
 #endif

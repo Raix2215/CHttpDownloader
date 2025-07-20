@@ -57,6 +57,7 @@ int main(int argc, char* argv[]) {
 				break;
 			case 'q':
 				printf("%s已退出程序。\n%s", GREEN, RESET);
+				free(greet);
 				return 0;
 			case 't':
 				download_test();
@@ -75,12 +76,16 @@ int main(int argc, char* argv[]) {
 				printf("直接运行进入交互式菜单。\n");
 				printf("命令行用法: %s [选项]\n", argv[0]);
 				printf("选项:\n");
-				printf("  --version, -v   显示版本信息\n");
-				printf("  --help, -h      显示帮助信息\n");
-				// printf("  --settings, -s  打开设置菜单\n");
-				printf("  --download, -d <URL> <输出文件名> <完整下载目录>  下载文件\n");
-				printf("  --test, -t      运行测试\n");
-				printf("可能的错误代码如下：\n");
+				printf("  --version, -v        显示版本信息\n");
+				printf("  --help, -h           显示帮助信息\n");
+				printf("  --download, -d <URL> [输出文件名] [下载目录] [--multithread|-m]  下载文件\n");
+				printf("  --test, -t           运行测试\n");
+				printf("  --multithread, -m    启用多线程下载（与 --download 配合使用）\n");
+				printf("\n示例:\n");
+				printf("  %s -d http://example.com/file.zip\n", argv[0]);
+				printf("  %s -d http://example.com/file.zip myfile.zip\n", argv[0]);
+				printf("  %s -d http://example.com/file.zip myfile.zip /tmp --multithread\n", argv[0]);
+				printf("\n可能的错误代码如下：\n");
 				printf("  %d: 下载成功\n", DOWNLOAD_SUCCESS);
 				printf("  %d: URL解析错误\n", DOWNLOAD_ERROR_URL_PARSE);
 				printf("  %d: DNS解析错误\n", DOWNLOAD_ERROR_DNS_RESOLVE);
@@ -96,8 +101,8 @@ int main(int argc, char* argv[]) {
 			default:
 				printf("%s无效选项，请重新输入。\n%s", YELLOW, RESET);
 			}
+
+			free(greet);
 		}
 	}
-
-
 }

@@ -18,3 +18,19 @@ const char* format_file_size(long long bytes) {
 
   return buffer;
 }
+
+char* format_time(int seconds) {
+  static char buffer[32];
+
+  if (seconds < 60) {
+    snprintf(buffer, sizeof(buffer), "%ds", seconds);
+  }
+  else if (seconds < 3600) {
+    snprintf(buffer, sizeof(buffer), "%dm%ds", seconds / 60, seconds % 60);
+  }
+  else {
+    snprintf(buffer, sizeof(buffer), "%dh%dm", seconds / 3600, (seconds % 3600) / 60);
+  }
+
+  return buffer;
+}

@@ -10,5 +10,11 @@
 const char* format_file_size(long long bytes);
 
 
+/**
+ * 格式化时间显示
+ * @param seconds 秒数
+ * @return 格式化的字符串
+ */
+char* format_time(int seconds);
 
 #endif

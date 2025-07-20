@@ -31,7 +31,8 @@
     "settings.h": "c",
     "test.h": "c",
     "err.h": "c",
-    "multithread.h": "c"
+    "multithread.h": "c",
+    "net.h": "c"
   },
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }
