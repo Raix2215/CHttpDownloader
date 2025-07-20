@@ -39,17 +39,24 @@ int resolve_hostname(const char* hostname, char* ip_str, size_t ip_str_len) {
 int parse_url(const char* url, URLInfo* info) {
   info->port = -1;
   strcpy(info->path, "/");
-  strcpy(info->scheme, "http");
+  strcpy(info->scheme, "https");
   info->query[0] = '\0';
 
   // 提取协议
   const char* protocol_end = strstr(url, "://");
   if (protocol_end) {
     size_t protocol_len = protocol_end - url;
-    if (protocol_len == 4)
+    if (protocol_len == 4 && strncasecmp(url, "http", 4) == 0) {
       info->protocol_type = PROTOCOL_HTTP;
-    else
+      strcpy(info->scheme, "http");
+    }
+    else if (protocol_len == 5 && strncasecmp(url, "https", 5) == 0) {
       info->protocol_type = PROTOCOL_HTTPS;
+      strcpy(info->scheme, "https");
+    }
+    else {
+      info->protocol_type = PROTOCOL_UNKNOWN;
+    }
     url = protocol_end + 3;
   }
   else {

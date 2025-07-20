@@ -1,6 +1,9 @@
 #include "../include/common.h"
 #include "../include/menu.h"
 #include "../include/download.h"
+#include "../include/https.h"
+#include "../include/http.h"
+#include "../include/parser.h"
 
 // CLI颜色定义
 const char* BLUE = "\033[34m";
@@ -13,6 +16,39 @@ const char* GREEN = "\033[32m";
 const char* CLEAR_LINE = "\r\033[K";
 
 #define MAX_SIZE 2048
+
+
+int getchoice(char* greet, char* choices[]) {
+  int choosen = 0;
+  int selected;
+
+  do {
+    char** option = choices;
+    while (*option) {
+      printf("%s \n", *option);
+      option++;
+    }
+    printf("%s", greet);
+    do {
+      selected = getchar();
+    } while (selected == '\n');
+
+    option = choices;
+    while (*option) {
+      if (selected == *option[0]) {
+        choosen = 1;
+        break;
+      }
+      option++;
+    }
+    if (!choosen) {
+      printf("%s无效的选项，请重新选择%s\n", RED, RESET);
+    }
+  } while (!choosen);
+
+  return selected;
+}
+
 int cli_choice(int argc, char* argv[]) {
   if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0) {
     printf("CHttpDownloader 版本: %s%s%s\n", VERSION, BLUE, RESET);
@@ -45,7 +81,7 @@ int cli_choice(int argc, char* argv[]) {
     if (argc >= 6) {
       printf("%s警告: 多余的参数被忽略%s\n", YELLOW, RESET);
     }
-    int result = download_file_http(url, output_filename, download_dir, 0);
+    int result = download_file_auto(url, output_filename, download_dir, 0);
     if (result != DOWNLOAD_SUCCESS) {
       fprintf(stderr, "%s下载失败，错误代码: %d%s\n", RED, result, RESET);
       return result;
@@ -67,12 +103,13 @@ int cli_choice(int argc, char* argv[]) {
       "                  /_/                                                               \n"
       "CHttpDownloader - 简易HTTP下载器\n"
     );
-    printf("用法: %s [选项]\n", argv[0]);
+    printf("直接运行进入交互式菜单。\n");
+    printf("命令行用法: %s [选项]\n", argv[0]);
     printf("选项:\n");
     printf("  --version, -v   显示版本信息\n");
     printf("  --help, -h      显示帮助信息\n");
-    printf("  --settings, -s  打开设置菜单\n");
-    printf("  --download, -d  下载文件\n");
+    // printf("  --settings, -s  打开设置菜单\n");
+    printf("  --download, -d <URL> <输出文件名> <完整下载目录>  下载文件\n");
     printf("  --test, -t      运行测试\n");
     printf("可能的错误代码如下：\n");
     printf("  %d: 下载成功\n", DOWNLOAD_SUCCESS);
@@ -161,7 +198,7 @@ int choice_download() {
 
   // 开始下载
   const char* dir_param = (strlen(download_dir) == 0) ? NULL : download_dir;
-  int result = download_file_http(input_url, output_filename, dir_param, 0);
+  int result = download_file_auto(input_url, output_filename, dir_param, 0);
 
   free(input_url);
   free(output_filename);
@@ -176,4 +213,38 @@ int choice_download() {
 
 int choice_settings() {
 
+}
+
+int download_file_auto(const char* url, const char* output_filename, const char* download_dir, int redirect_count) {
+  if (!url || !output_filename) {
+    fprintf(stderr, "%s错误: URL 或输出文件名不能为空%s\n", RED, RESET);
+    return DOWNLOAD_ERROR_URL_PARSE;
+  }
+
+  // 确定协议类型
+  URLInfo url_info = { 0 };
+  if (parse_url(url, &url_info) != 0) {
+    fprintf(stderr, "%s错误: 无法解析URL%s\n", RED, RESET);
+    return DOWNLOAD_ERROR_URL_PARSE;
+  }
+
+  // 根据协议类型选择下载方法
+  switch (url_info.protocol_type) {
+  case PROTOCOL_HTTP:
+    // printf("检测到 HTTP 协议，使用 HTTP 下载...\n");
+    return download_file_http(url, output_filename, download_dir, redirect_count);
+
+  case PROTOCOL_HTTPS:
+    // printf("检测到 HTTPS 协议，使用 HTTPS 下载...\n");
+#ifdef WITH_OPENSSL
+    return download_file_https(url, output_filename, download_dir, redirect_count);
+#else
+    fprintf(stderr, "%s错误: 程序编译时未包含 HTTPS 支持%s\n", RED, RESET);
+    return DOWNLOAD_ERROR_NETWORK;
+#endif
+
+  default:
+    fprintf(stderr, "%s错误: 不支持的协议类型%s\n", RED, RESET);
+    return DOWNLOAD_ERROR_URL_PARSE;
+  }
 }

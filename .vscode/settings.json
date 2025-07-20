@@ -29,7 +29,9 @@
     "stat.h": "c",
     "menu.h": "c",
     "settings.h": "c",
-    "test.h": "c"
+    "test.h": "c",
+    "err.h": "c",
+    "multithread.h": "c"
   },
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

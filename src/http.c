@@ -212,6 +212,7 @@ int process_header_field(const char* name, const char* value, HttpResponseInfo* 
     if (strcasecmp(value, "chunked") == 0) {
       response_info->chunked_encoding = 1;
     }
+    strncpy(response_info->transfer_encoding, value, sizeof(response_info->transfer_encoding) - 1);
   }
   else if (strcasecmp(name, "Connection") == 0) {
     if (strcasecmp(value, "close") == 0) {
@@ -225,6 +226,12 @@ int process_header_field(const char* name, const char* value, HttpResponseInfo* 
   else if (strcasecmp(name, "Server") == 0) {
     strncpy(response_info->server, value,
       sizeof(response_info->server) - 1);
+  }
+  else if (strcasecmp(name, "Accept-Ranges") == 0) {
+    strncpy(response_info->accept_ranges, value, sizeof(response_info->accept_ranges) - 1);
+  }
+  else if (strcasecmp(name, "Content-Range") == 0) {
+    strncpy(response_info->content_range, value, sizeof(response_info->content_range) - 1);
   }
   else if (strcasecmp(name, "Set-Cookie") == 0) {
     if (strlen(response_info->cookies) + strlen(value) < sizeof(response_info->cookies)) {
@@ -262,9 +269,12 @@ int build_http_get_request(const char* host, const char* path, char* buffer, siz
   int written = snprintf(buffer, buffer_size,
     "GET %s HTTP/1.1\r\n"
     "Host: %s\r\n"
-    "User-Agent: CHttpDownloader/1.0\r\n"
+    "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\r\n"
+    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n"
+    "Accept-Language: en-US,en;q=0.5\r\n"
+    "Accept-Encoding: identity\r\n"
     "Connection: close\r\n"
-    "Accept: */*\r\n"
+    "Upgrade-Insecure-Requests: 1\r\n"
     "\r\n",
     request_path, host);
 

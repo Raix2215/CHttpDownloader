@@ -23,6 +23,7 @@
 #include <ctype.h>
 #include <sys/stat.h>
 #include <limits.h>
+#include <pthread.h>
 
 #define READ_BUFFER_SIZE 8192
 #define REQUEST_BUFFER 8192
@@ -94,6 +95,9 @@ typedef struct {
   int connection_close;               // 服务器是否要求关闭连接
   char location[2048];                 // 重定向位置（对3xx）
   char cookies[2048];                  // Cookie信息
+  char transfer_encoding[128];          // Transfer-Encoding头部
+  char content_range[128];             // Content-Range 头的值
+  char accept_ranges[64];              // Accept-Ranges 头的值
 } HttpResponseInfo;
 
 // http请求响应信息buffer
@@ -113,5 +117,76 @@ typedef struct {
   time_t last_update_time;        // 上次更新时间
   double download_speed;          // 下载速度（B/秒）
 } DownloadProgress;
+
+// 线程状态枚举
+typedef enum {
+  THREAD_STATE_IDLE,          // 空闲
+  THREAD_STATE_CONNECTING,    // 正在连接
+  THREAD_STATE_DOWNLOADING,   // 正在下载
+  THREAD_STATE_COMPLETED,     // 完成
+  THREAD_STATE_ERROR,         // 错误
+  THREAD_STATE_STOPPED        // 停止
+} ThreadState;
+
+typedef struct {
+  struct ssl_ctx_st* ctx;     // SSL 上下文
+  struct ssl_st* ssl;         // SSL 连接对象
+  int sockfd;                 // 底层 socket 文件描述符
+} HttpsConnection;
+
+// 文件段信息
+typedef struct {
+  long long start_byte;       // 段开始字节位置
+  long long end_byte;         // 段结束字节位置
+  long long downloaded_bytes; // 已下载字节数
+  ThreadState state;          // 线程状态
+  int thread_id;              // 线程ID
+  char error_message[256];    // 错误信息
+} FileSegment;
+
+// 单个下载线程的参数
+typedef struct {
+  int thread_id;              // 线程ID
+  char* url;                  // 下载URL
+  char* temp_filename;        // 临时文件名
+  FileSegment* segment;       // 分配的文件段
+  pthread_t pthread_id;       // pthread ID
+
+  // 统计信息
+  time_t start_time;          // 开始时间
+  double download_speed;      // 下载速度
+
+  // 状态控制
+  volatile int should_stop;   // 停止标志
+  pthread_mutex_t* progress_mutex; // 进度互斥锁
+} ThreadDownloadParams;
+
+// 多线程下载管理器
+typedef struct {
+  char* url;                  // 下载URL
+  char* output_filename;      // 输出文件名
+  char* download_dir;         // 下载目录
+
+  int thread_count;           // 线程数量
+  long long file_size;        // 文件总大小
+
+  FileSegment* segments;      // 文件段数组
+  ThreadDownloadParams* threads; // 线程参数数组
+
+  // 同步对象
+  pthread_mutex_t progress_mutex; // 进度更新互斥锁
+  pthread_mutex_t file_mutex;     // 文件写入互斥锁
+
+  // 统计信息
+  long long total_downloaded; // 总已下载字节数
+  time_t start_time;          // 开始时间
+  double total_speed;         // 总下载速度
+
+  // 状态控制
+  volatile int should_stop;   // 全局停止标志
+  int completed_threads;      // 已完成线程数
+  int error_count;            // 错误计数
+
+} MultiThreadDownloader;
 
 #endif

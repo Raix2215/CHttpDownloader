@@ -234,6 +234,7 @@ int download_content_until_close(int sockfd, FILE* output_file, DownloadProgress
 
   return 0;
 }
+
 int download_file_http(const char* url, const char* output_filename, const char* download_dir, int redirect_count) {
 
   // CLI颜色定义
@@ -477,9 +478,4 @@ int download_file_http(const char* url, const char* output_filename, const char*
   // 重定向次数过多
   fprintf(stderr, "%s错误: 重定向次数过多%s\n", RED, RESET);
   return DOWNLOAD_ERROR_HTTP_RESPONSE;
-}
-
-int download_file_https(const char* url, const char* output_filename, const char* download_dir, int redirect_count) {
-  //TODO
-  return -1;
 }
