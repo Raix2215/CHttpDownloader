@@ -20,7 +20,6 @@ const char* CLEAR_LINE = "\r\033[K";
 
 #define MAX_SIZE 2048
 
-
 int getchoice(char* greet, char* choices[]) {
   int choosen = 0;
   int selected;
@@ -64,51 +63,79 @@ int cli_choice(int argc, char* argv[]) {
       return -1;
     }
     const char* url = argv[2];
-    const char* output_filename = "Downloaded_File";
+    const char* output_filename = NULL;
     const char* download_dir = NULL;
     int use_multithread = 0;
     int thread_count = 4;
+    int next_is_thread_count = 0;
 
     // 解析参数
     for (int i = 3; i < argc; i++) {
+      if (next_is_thread_count) {
+        // 处理线程数参数
+        thread_count = atoi(argv[i]);
+        if (thread_count <= 0 || thread_count > MAX_THREADS) {
+          printf("%s错误: 线程数必须在1到%d之间%s\n", RED, MAX_THREADS, RESET);
+          return -1;
+        }
+        printf("%s设置线程数为: %d%s\n", BLUE, thread_count, RESET);
+        next_is_thread_count = 0;
+        continue;
+      }
+
       if (strcmp(argv[i], "--multithread") == 0 || strcmp(argv[i], "-m") == 0) {
         use_multithread = 1;
         printf("%s✓ 启用多线程下载模式%s\n", GREEN, RESET);
-        if (i + 1 < argc && argv[i + 1][0] != '-') {
-          // 如果指定了线程数
-          thread_count = atoi(argv[++i]);
-          if (thread_count <= 0 || thread_count > MAX_THREADS) {
-            printf("%s错误: 线程数必须在1到%d之间%s\n", RED, MAX_THREADS, RESET);
-            return -1;
-          }
-          printf("%s设置线程数为: %d%s\n", BLUE, thread_count, RESET);
+
+        // 检查下一个参数是否是线程数
+        if (i + 1 < argc && argv[i + 1][0] != '-' && isdigit(argv[i + 1][0])) {
+          next_is_thread_count = 1;
         }
         else {
-          printf("%s警告: 未指定线程数，使用默认值: %d%s\n", YELLOW, thread_count, RESET);
+          printf("%s使用默认线程数: %d%s\n", BLUE, thread_count, RESET);
         }
-
       }
-      else if (i == 3 && argv[i][0] != '-') {
-        // 第一个非选项参数是输出文件名
-        output_filename = argv[i];
+      else if (argv[i][0] != '-') {
+        // 非选项参数，按顺序分配给 output_filename 和 download_dir
+        if (output_filename == NULL) {
+          output_filename = argv[i];
+        }
+        else if (download_dir == NULL) {
+          download_dir = argv[i];
+        }
+        else {
+          printf("%s警告: 忽略多余的参数 '%s'%s\n", YELLOW, argv[i], RESET);
+        }
       }
-      else if (i == 4 && argv[i][0] != '-') {
-        // 第二个非选项参数是下载目录
-        download_dir = argv[i];
+      else {
+        printf("%s警告: 未知选项 '%s' 被忽略%s\n", YELLOW, argv[i], RESET);
       }
-    }
-
-    if (strncmp(output_filename, "Downloaded_File", MAX_SIZE) == 0 && !download_dir) {
-      printf("%s警告: 未指定下载文件名及下载目录，使用默认名称：%s 和当前目录: %s %s\n",
-        YELLOW, output_filename, ".", RESET);
-    }
-    if (strncmp(output_filename, "Downloaded_File", MAX_SIZE) == 0 && download_dir) {
-      printf("%s警告: 未指定下载目录，使用当前工作目录: %s%s\n", YELLOW, ".", RESET);
-    }
-    if (argc >= 8) {
-      printf("%s警告: 多余的参数被忽略%s\n", YELLOW, RESET);
     }
 
+    // 设置默认值和给出相应警告
+    if (output_filename == NULL) {
+      output_filename = "Downloaded_File";
+      if (download_dir == NULL) {
+        printf("%s警告: 未指定文件名和下载目录，使用默认文件名 '%s' 和当前目录%s\n",
+          YELLOW, output_filename, RESET);
+      }
+      else {
+        printf("%s警告: 未指定文件名，使用默认文件名 '%s'%s\n",
+          YELLOW, output_filename, RESET);
+      }
+    }
+    else if (download_dir == NULL) {
+      printf("%s警告: 未指定下载目录，使用当前目录%s\n", YELLOW, RESET);
+    }
+
+    // printf("%s下载URL: %s%s%s\n", BOLD, BLUE, url, RESET);
+    // printf("%s输出文件名: %s%s%s\n", BOLD, BLUE,
+    //   output_filename ? output_filename : "未指定", RESET);
+    // printf("%s下载目录: %s%s%s\n", BOLD, BLUE,
+    //   download_dir ? download_dir : "未指定", RESET);
+    // printf("%s多线程下载: %s%s%s\n", BOLD, use_multithread ? GREEN : RED,
+    //   use_multithread ? "启用" : "禁用", RESET);
+    // printf("%s线程数: %s%d%s\n", BOLD, BLUE, thread_count, RESET);
 
     int result = download_file_auto(url, output_filename, download_dir, use_multithread, thread_count);
     if (result != DOWNLOAD_SUCCESS) {
@@ -447,7 +474,8 @@ int download_file_auto(const char* url, const char* output_filename, const char*
   }
 
   // 单线程下载
-  printf("%s=== 使用单线程下载 ===%s\n", BOLD, RESET);
+  printf("%s%s=== 使用单线程下载 ===%s\n", GREEN, BOLD, RESET);
+  printf("%s下载URL: %s%s%s\n", BOLD, BLUE, url, RESET);
 
   // 根据协议类型选择下载方法
   switch (url_info.protocol_type) {

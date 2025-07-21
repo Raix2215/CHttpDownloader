@@ -110,27 +110,36 @@ int parse_url(const char* url, URLInfo* info) {
   // 解析path
   if (*url == '/') {
     const char* path_start = url;
-    const char* path_end = strchr(url, '?');
+    // const char* path_end = strchr(url, '?');
 
-    if (!path_end) {
-      path_end = url + strlen(url);
-    }
+    // if (!path_end) {
+    //   path_end = url + strlen(url);
+    // }
 
-    size_t path_len = path_end - path_start;
-    strncpy(info->path, path_start, path_len);
-    info->path[path_len] = '\0';
+    // size_t path_len = path_end - path_start;
+    // strncpy(info->path, path_start, path_len);
+    // info->path[path_len] = '\0';
 
-    url = path_end;
+    // url = path_end;
+    strncpy(info->path, path_start, sizeof(info->path) - 1);
   }
 
   // 解析query参数
-  if (*url == '?') {
-    url++;
-    size_t query_len = strlen(url);
-    if (query_len > 0) {
-      strcpy(info->query, url);
-    }
-  }
+  // if (*url == '?') {
+  //   url++;
+  //   size_t query_len = strlen(url);
+  //   if (query_len > 0) {
+  //     strcpy(info->query, url);
+  //   }
+  // }
+
+  // info->query[sizeof(info->query) - 1] = '\0';
+  // info->path[sizeof(info->path) - 1] = '\0';
+  // char full_path[4096];
+  // strcpy(full_path, info->path);
+  // strcat(full_path, "?");
+  // strncat(full_path, info->query, sizeof(full_path) - strlen(full_path) - 1);
+  // strncpy(info->path, full_path, sizeof(info->path) - 1);
 
   if (info->port == (-1)) {
     if (info->protocol_type == PROTOCOL_HTTPS) {

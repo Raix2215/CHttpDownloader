@@ -704,7 +704,7 @@ int download_file_https(const char* url, const char* output_filename, const char
       cleanup_openssl();
       return DOWNLOAD_ERROR_URL_PARSE;
     }
-
+    
     printf("%sHost: %s%s%s%s, %sPort: %s%s%d%s, %sPath: %s%s%s%s\n",
       BOLD, RESET, BLUE, url_info.host, RESET,
       BOLD, RESET, BLUE, url_info.port, RESET,

@@ -27,7 +27,7 @@
 
 #define READ_BUFFER_SIZE 8192
 #define REQUEST_BUFFER 8192
-#define VERSION "1.0"
+#define VERSION "1.3"
 
 #define MAX_THREADS 16 // 最大线程数限制
 #define MIN_SEGMENT_SIZE (1024 * 1024) // 最小段大小：1MB
