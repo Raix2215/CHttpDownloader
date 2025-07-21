@@ -26,7 +26,7 @@ set(SOURCE_FILES
     src/net.c
     src/test.c
     src/menu.c
-    src/settings.c
+    src/config.c
     src/https.c
     src/multithread.c
     main.c

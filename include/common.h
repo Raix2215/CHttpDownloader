@@ -29,6 +29,9 @@
 #define REQUEST_BUFFER 8192
 #define VERSION "1.0"
 
+#define MAX_THREADS 16 // 最大线程数限制
+#define MIN_SEGMENT_SIZE (1024 * 1024) // 最小段大小：1MB
+
 typedef enum {
   DOWNLOAD_SUCCESS = 0,
   DOWNLOAD_ERROR_URL_PARSE = -1,
@@ -64,6 +67,14 @@ typedef enum {
   DOMAIN = 2,
   IPV6 = 3
 } HostType;
+
+typedef struct {
+  int default_threads;                        // 默认用于下载的多线程数
+  ProtocolType default_protocol;              // 默认协议类型
+  char default_download_dir[PATH_MAX];        // 下载目录
+  int enable_multithread;                     // 是否启用多线程下载
+  char default_download_filename[PATH_MAX];   // 默认下载文件名
+} Config;
 
 typedef struct {
   char scheme[8];   //协议

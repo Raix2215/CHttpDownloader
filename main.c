@@ -6,7 +6,7 @@
 #include "./include/http.h"
 #include "./include/progress.h"
 #include "./include/utils.h"
-#include "./include/settings.h"
+#include "./include/config.h"
 #include "./include/menu.h"
 #include "./include/test.h"
 #include "./include/multithread.h"
@@ -16,10 +16,14 @@ char* menu[] = {
 	"q - 退出",
 	"t - 测试",
 	"h - 帮助",
+	// "c - 配置",
 	NULL,
 };
 
 int main(int argc, char* argv[]) {
+	Config config;
+	load_config(&config);
+
 	// CLI颜色定义
 	const char* BLUE = "\033[34m";
 	const char* CYAN = "\033[36m";
@@ -59,6 +63,9 @@ int main(int argc, char* argv[]) {
 				printf("%s已退出程序。\n%s", GREEN, RESET);
 				free(greet);
 				return 0;
+			// case 'c':
+			// 	result = choice_config();
+			// 	break;
 			case 't':
 				download_test();
 				break;
@@ -78,7 +85,7 @@ int main(int argc, char* argv[]) {
 				printf("选项:\n");
 				printf("  --version, -v        显示版本信息\n");
 				printf("  --help, -h           显示帮助信息\n");
-				printf("  --download, -d <URL> [输出文件名] [下载目录] [--multithread|-m]  下载文件\n");
+				printf("  --download, -d <URL> [输出文件名] [下载目录] [--multithread|-m] [-线程数] 下载文件\n");
 				printf("  --test, -t           运行测试\n");
 				printf("  --multithread, -m    启用多线程下载（与 --download 配合使用）\n");
 				printf("\n示例:\n");
@@ -103,6 +110,7 @@ int main(int argc, char* argv[]) {
 			}
 
 			free(greet);
+			return result;
 		}
 	}
 }

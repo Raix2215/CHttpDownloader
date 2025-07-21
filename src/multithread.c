@@ -8,9 +8,7 @@
 #include "../include/progress.h"
 #include "../include/menu.h"
 
-// 最大线程数限制
-#define MAX_THREADS 16
-#define MIN_SEGMENT_SIZE (1024 * 1024) // 最小段大小：1MB
+
 
 //创建多线程下载器
 MultiThreadDownloader* create_multithread_downloader(const char* url, const char* output_filename, const char* download_dir, int thread_count) {
@@ -462,7 +460,7 @@ int download_segment(ThreadDownloadParams* thread_params) {
     snprintf(segment->error_message, sizeof(segment->error_message), "HTTPS支持未编译");
     segment->state = THREAD_STATE_ERROR;
 #endif
-}
+  }
   else {
     result = download_http_segment(&url_info, thread_params, temp_file);
   }
@@ -541,7 +539,7 @@ int calculate_file_segments(long long file_size, int thread_count, FileSegment* 
     segments[i].error_message[0] = '\0';
 
     long long actual_size = segments[i].end_byte - segments[i].start_byte + 1;
-    printf("%s段 %d:%s %s%lld-%lld (%lld 字节)%s\n", BOLD, i, RESET, BLUE, segments[i].start_byte, segments[i].end_byte, actual_size, RESET);
+    printf("%s段 %d:%s %s%lld-%lld (%s)%s\n", BOLD, i, RESET, BLUE, segments[i].start_byte, segments[i].end_byte, format_file_size(actual_size), RESET);
 
     current_pos = segments[i].end_byte + 1;
   }
@@ -770,7 +768,7 @@ int download_file_fallback_single_thread(MultiThreadDownloader* downloader) {
 
   // 使用现有的单线程下载函数
   return download_file_auto(downloader->url, downloader->output_filename,
-    downloader->download_dir, 0);
+    downloader->download_dir, 0,1);
 }
 
 int merge_temp_files(MultiThreadDownloader* downloader) {
@@ -899,7 +897,6 @@ void display_multithread_progress(MultiThreadDownloader* downloader) {
   if (!downloader) {
     return;
   }
-
   // 颜色定义
   const char* GREEN = "\033[32m";
   const char* BLUE = "\033[34m";
@@ -919,6 +916,9 @@ void display_multithread_progress(MultiThreadDownloader* downloader) {
   int active_threads = 0;
   int completed_threads = 0;
   int error_threads = 0;
+
+  char total_file_size_str[64];
+  strcpy(total_file_size_str, format_file_size(downloader->file_size));
 
   for (int i = 0; i < downloader->thread_count; i++) {
     FileSegment* segment = &downloader->segments[i];
@@ -947,7 +947,7 @@ void display_multithread_progress(MultiThreadDownloader* downloader) {
 
   pthread_mutex_unlock(&downloader->progress_mutex);
 
-  // 静态变量记录是否是第一次显示
+  // 是否是第一次显示
   static int first_display = 1;
   static int lines_printed = 0;
 
@@ -1005,7 +1005,7 @@ void display_multithread_progress(MultiThreadDownloader* downloader) {
     // 清除当前行并显示线程信息
     printf("\r\033[K%s线程 %d:%s [%s%s%s] ", BOLD, i, RESET, status_color, status_text, RESET);
 
-    // 线程进度条（较短，20个字符）
+    // 线程进度条
     const int THREAD_BAR_WIDTH = 20;
     int thread_filled = (int)(segment_progress * THREAD_BAR_WIDTH / 100.0);
 
@@ -1050,7 +1050,7 @@ void display_multithread_progress(MultiThreadDownloader* downloader) {
 
   printf("\n");
 
-  // 总进度条 - 修复文件大小显示
+  // 总进度条
   double total_progress = 0.0;
   if (downloader->file_size > 0) {
     total_progress = (double)total_downloaded * 100.0 / downloader->file_size;
@@ -1083,17 +1083,17 @@ void display_multithread_progress(MultiThreadDownloader* downloader) {
     printf("%s%6.2f%%%s ", YELLOW, total_progress, RESET);
   }
 
-  // 修复：正确显示总下载量和总文件大小
+  // 总下载量和总文件大小
   printf("%s%s%s/%s%s%s ",
     BLUE, format_file_size(total_downloaded), RESET,
-    BOLD, format_file_size(downloader->file_size), RESET);
+    BOLD, total_file_size_str, RESET);
 
   // 总速度
   printf("%s%s/s%s ",
     CYAN, format_file_size((long long)total_speed), RESET);
 
   // 线程状态统计
-  printf("线程: %s%d%s活动 %s%d%s完成",
+  printf(" 线程: %s%d%s活动 %s%d%s完成 ",
     YELLOW, active_threads, RESET,
     GREEN, completed_threads, RESET);
   if (error_threads > 0) {

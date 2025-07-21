@@ -24,10 +24,11 @@ int cli_choice(int argc, char* argv[]);
  */
 int choice_download();
 
-/**
- * 设置菜单选择处理
- */
-int choice_settings();
+// /**
+//  * 配置选择处理
+//  * @return 配置结果状态码
+//  */
+// int choice_config();
 
 /**
  * 自动选择协议进行文件下载（支持多线程）
@@ -37,6 +38,6 @@ int choice_settings();
  * @param use_multithread 是否使用多线程下载（1启用，0禁用）
  * @return 下载结果代码
  */
-int download_file_auto(const char* url, const char* output_filename, const char* download_dir, int use_multithread);
+int download_file_auto(const char* url, const char* output_filename, const char* download_dir, int use_multithread, int thread_count);
 
 #endif

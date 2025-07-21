@@ -36,6 +36,8 @@ void update_download_progress(DownloadProgress* progress) {
 }
 
 void print_progress_bar(double percentage, long long downloaded, long long total, double speed, time_t eta) {
+  char total_file_size_str[64];
+  strcpy(total_file_size_str, format_file_size(total));
   const int BAR_WIDTH = 40;
   int filled_length = (int)(percentage * BAR_WIDTH / 100.0);
 
@@ -76,7 +78,7 @@ void print_progress_bar(double percentage, long long downloaded, long long total
   // 显示下载量
   printf("%s%s%s/%s%s%s ",
     BLUE, format_file_size(downloaded), RESET,
-    BOLD, format_file_size(total), RESET);
+    BOLD, total_file_size_str, RESET);
 
   // 显示下载速度
   printf("%s%s/s%s ",
