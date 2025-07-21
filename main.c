@@ -21,8 +21,8 @@ char* menu[] = {
 };
 
 int main(int argc, char* argv[]) {
-	Config config;
-	load_config(&config);
+	// Config config;
+	// load_config(&config);
 
 	// CLI颜色定义
 	const char* BLUE = "\033[34m";
