@@ -887,7 +887,7 @@ void cleanup_temp_files(MultiThreadDownloader* downloader) {
         printf("  已删除: %s\n", thread->temp_filename);
       }
       else {
-        // 文件可能已经不存在，这是正常的
+        // 文件可能已经不存在
       }
     }
   }
