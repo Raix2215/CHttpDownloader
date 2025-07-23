@@ -210,4 +210,5 @@ void print_download_summary(DownloadProgress* progress, int success) {
   printf("  总计下载: %s%s%s\n", BLUE, format_file_size(progress->downloaded_size), RESET);
   printf("  用时: %s%s%s\n", BLUE, format_time_duration(total_time), RESET);
   printf("  平均速度: %s%s/s%s\n", BLUE, format_file_size((long long)avg_speed), RESET);
+  printf("\n%s-------------------------下载已结束--------------------------%s\n\n", BOLD, RESET);
 }

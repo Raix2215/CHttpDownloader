@@ -142,7 +142,7 @@ typedef enum {
 typedef struct {
   struct ssl_ctx_st* ctx;     // SSL 上下文
   struct ssl_st* ssl;         // SSL 连接对象
-  int sockfd;                 // 底层 socket 文件描述符
+  int sockfd;                 // socket 文件描述符
 } HttpsConnection;
 
 // 文件段信息

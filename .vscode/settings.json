@@ -34,7 +34,8 @@
     "multithread.h": "c",
     "net.h": "c",
     "https.h": "c",
-    "config.h": "c"
+    "config.h": "c",
+    "pthread.h": "c"
   },
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools"
 }

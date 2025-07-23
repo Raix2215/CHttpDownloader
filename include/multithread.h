@@ -27,7 +27,7 @@ int check_range_support(const char* url, long long* file_size);
  * @param downloader 下载器指针
  * @return 成功返回0，失败返回错误代码
  */
-int start_multithread_download(MultiThreadDownloader* downloader);
+int multithread_download(MultiThreadDownloader* downloader);
 
 /**
  * 停止多线程下载

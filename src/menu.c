@@ -455,13 +455,13 @@ int download_file_auto(const char* url, const char* output_filename, const char*
 
     if (downloader) {
       // 开始多线程下载
-      int multithread_result = start_multithread_download(downloader);
+      int multithread_result = multithread_download(downloader);
 
       // 清理资源
       destroy_multithread_downloader(downloader);
 
       if (multithread_result == 0) {
-        printf("%s✓ 多线程下载成功完成%s\n", GREEN, RESET);
+        printf("\n%s-------------------------下载已结束--------------------------%s\n\n", BOLD, RESET);
         return DOWNLOAD_SUCCESS;
       }
       else {

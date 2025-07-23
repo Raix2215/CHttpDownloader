@@ -60,23 +60,23 @@ SSL_CTX* create_ssl_context() {
   return ctx;
 }
 
-void close_https_connection(HttpsConnection* conn) {
-  if (!conn) return;
+void close_https_connection(HttpsConnection* https_connection) {
+  if (!https_connection) return;
 
-  if (conn->ssl) {
-    SSL_shutdown(conn->ssl);
-    SSL_free(conn->ssl);
+  if (https_connection->ssl) {
+    SSL_shutdown(https_connection->ssl);
+    SSL_free(https_connection->ssl);
   }
 
-  if (conn->sockfd >= 0) {
-    close(conn->sockfd);
+  if (https_connection->sockfd >= 0) {
+    close(https_connection->sockfd);
   }
 
-  if (conn->ctx) {
-    SSL_CTX_free(conn->ctx);
+  if (https_connection->ctx) {
+    SSL_CTX_free(https_connection->ctx);
   }
 
-  free(conn);
+  free(https_connection);
   // printf("HTTPS 连接已关闭\n");
 }
 
@@ -89,22 +89,22 @@ HttpsConnection* create_https_connection(const char* hostname, int port) {
   // printf("正在建立 HTTPS 连接到 %s:%d...\n", hostname, port);
 
   // 分配内存
-  HttpsConnection* conn = malloc(sizeof(HttpsConnection));
-  if (!conn) {
+  HttpsConnection* https_connection = malloc(sizeof(HttpsConnection));
+  if (!https_connection) {
     fprintf(stderr, "错误: 内存分配失败\n");
     return NULL;
   }
 
   // 初始化结构体
-  conn->ctx = NULL;
-  conn->ssl = NULL;
-  conn->sockfd = -1;
+  https_connection->ctx = NULL;
+  https_connection->ssl = NULL;
+  https_connection->sockfd = -1;
 
   // 创建 SSL 上下文
-  conn->ctx = create_ssl_context();
-  if (!conn->ctx) {
+  https_connection->ctx = create_ssl_context();
+  if (!https_connection->ctx) {
     fprintf(stderr, "错误: SSL 上下文创建失败\n");
-    free(conn);
+    free(https_connection);
     return NULL;
   }
 
@@ -112,59 +112,59 @@ HttpsConnection* create_https_connection(const char* hostname, int port) {
   char ip_str[INET_ADDRSTRLEN];
   if (resolve_hostname(hostname, ip_str, sizeof(ip_str)) != 0) {
     fprintf(stderr, "错误: 无法解析主机名 %s\n", hostname);
-    SSL_CTX_free(conn->ctx);
-    free(conn);
+    SSL_CTX_free(https_connection->ctx);
+    free(https_connection);
     return NULL;
   }
 
   // printf("已解析 %s -> %s\n", hostname, ip_str);
 
   // 建立 TCP 连接
-  conn->sockfd = create_tcp_connection(ip_str, port);
-  if (conn->sockfd < 0) {
+  https_connection->sockfd = create_tcp_connection(ip_str, port);
+  if (https_connection->sockfd < 0) {
     fprintf(stderr, "错误: TCP 连接建立失败\n");
-    SSL_CTX_free(conn->ctx);
-    free(conn);
+    SSL_CTX_free(https_connection->ctx);
+    free(https_connection);
     return NULL;
   }
 
   // printf("TCP 连接建立成功\n");
 
   // 创建 SSL 对象
-  conn->ssl = SSL_new(conn->ctx);
-  if (!conn->ssl) {
+  https_connection->ssl = SSL_new(https_connection->ctx);
+  if (!https_connection->ssl) {
     fprintf(stderr, "错误: 无法创建 SSL 对象\n");
     ERR_print_errors_fp(stderr);
-    close(conn->sockfd);
-    SSL_CTX_free(conn->ctx);
-    free(conn);
+    close(https_connection->sockfd);
+    SSL_CTX_free(https_connection->ctx);
+    free(https_connection);
     return NULL;
   }
 
   // 将 SSL 对象与 socket 关联
-  if (SSL_set_fd(conn->ssl, conn->sockfd) != 1) {
+  if (SSL_set_fd(https_connection->ssl, https_connection->sockfd) != 1) {
     fprintf(stderr, "错误: 无法将 SSL 对象与 socket 关联\n");
     ERR_print_errors_fp(stderr);
-    SSL_free(conn->ssl);
-    close(conn->sockfd);
-    SSL_CTX_free(conn->ctx);
-    free(conn);
+    SSL_free(https_connection->ssl);
+    close(https_connection->sockfd);
+    SSL_CTX_free(https_connection->ctx);
+    free(https_connection);
     return NULL;
   }
 
   // 设置 SNI (Server Name Indication)
-  if (SSL_set_tlsext_host_name(conn->ssl, hostname) != 1) {
+  if (SSL_set_tlsext_host_name(https_connection->ssl, hostname) != 1) {
     fprintf(stderr, "警告: 无法设置 SNI\n");
   }
 
   // 执行 SSL 握手
   // printf("正在执行 SSL 握手...\n");
-  int ssl_connect_result = SSL_connect(conn->ssl);
+  int ssl_connect_result = SSL_connect(https_connection->ssl);
   if (ssl_connect_result != 1) {
-    int ssl_error = SSL_get_error(conn->ssl, ssl_connect_result);
+    int ssl_error = SSL_get_error(https_connection->ssl, ssl_connect_result);
     fprintf(stderr, "错误: SSL 握手失败 (错误代码: %d)\n", ssl_error);
 
-    // 打印详细的错误信息
+    // 错误信息
     switch (ssl_error) {
     case SSL_ERROR_WANT_READ:
       fprintf(stderr, "SSL_ERROR_WANT_READ: 需要更多数据\n");
@@ -185,22 +185,23 @@ HttpsConnection* create_https_connection(const char* hostname, int port) {
       break;
     }
 
-    SSL_free(conn->ssl);
-    close(conn->sockfd);
-    SSL_CTX_free(conn->ctx);
-    free(conn);
+    SSL_free(https_connection->ssl);
+    close(https_connection->sockfd);
+    SSL_CTX_free(https_connection->ctx);
+    free(https_connection);
     return NULL;
   }
 
   // printf("✓ SSL 握手完成\n");
 
   // 验证证书
-  // verify_certificate(conn, hostname);
+  // verify_certificate(https_connection, hostname);
 
-  return conn;
+  return https_connection;
 }
-int ssl_send_data(HttpsConnection* conn, const char* buffer, size_t length) {
-  if (!conn || !conn->ssl || !buffer) {
+
+int ssl_send_data(HttpsConnection* https_connection, const char* buffer, size_t length) {
+  if (!https_connection || !https_connection->ssl || !buffer) {
     fprintf(stderr, "错误: 无效的参数\n");
     return -1;
   }
@@ -208,10 +209,10 @@ int ssl_send_data(HttpsConnection* conn, const char* buffer, size_t length) {
   size_t total_sent = 0;
 
   while (total_sent < length) {
-    int bytes_sent = SSL_write(conn->ssl, buffer + total_sent, length - total_sent);
+    int bytes_sent = SSL_write(https_connection->ssl, buffer + total_sent, length - total_sent);
 
     if (bytes_sent <= 0) {
-      int ssl_error = SSL_get_error(conn->ssl, bytes_sent);
+      int ssl_error = SSL_get_error(https_connection->ssl, bytes_sent);
 
       switch (ssl_error) {
       case SSL_ERROR_WANT_WRITE:
@@ -241,16 +242,16 @@ int ssl_send_data(HttpsConnection* conn, const char* buffer, size_t length) {
   return 0;
 }
 
-ssize_t ssl_recv_data(HttpsConnection* conn, void* buffer, size_t length) {
-  if (!conn || !conn->ssl || !buffer) {
+ssize_t ssl_recv_data(HttpsConnection* https_connection, void* buffer, size_t length) {
+  if (!https_connection || !https_connection->ssl || !buffer) {
     fprintf(stderr, "错误: 无效的参数\n");
     return -1;
   }
 
-  int bytes_received = SSL_read(conn->ssl, buffer, length);
+  int bytes_received = SSL_read(https_connection->ssl, buffer, length);
 
   if (bytes_received <= 0) {
-    int ssl_error = SSL_get_error(conn->ssl, bytes_received);
+    int ssl_error = SSL_get_error(https_connection->ssl, bytes_received);
 
     switch (ssl_error) {
     case SSL_ERROR_WANT_READ:
@@ -292,13 +293,13 @@ ssize_t ssl_recv_data(HttpsConnection* conn, void* buffer, size_t length) {
   return bytes_received;
 }
 
-void verify_certificate(HttpsConnection* conn, const char* hostname) {
-  if (!conn || !conn->ssl || !hostname) {
+void verify_certificate(HttpsConnection* https_connection, const char* hostname) {
+  if (!https_connection || !https_connection->ssl || !hostname) {
     return;
   }
 
   // 获取对方证书
-  X509* cert = SSL_get_peer_certificate(conn->ssl);
+  X509* cert = SSL_get_peer_certificate(https_connection->ssl);
   if (!cert) {
     printf("警告: 服务器没有提供证书\n");
     return;
@@ -319,20 +320,19 @@ void verify_certificate(HttpsConnection* conn, const char* hostname) {
   X509_free(cert);
 
   // 获取验证结果
-  long verify_result = SSL_get_verify_result(conn->ssl);
+  long verify_result = SSL_get_verify_result(https_connection->ssl);
   if (verify_result == X509_V_OK) {
-    // printf("✓ 证书验证通过\n");
+    // printf("证书验证通过");
   }
   else {
-    // printf("⚠ 证书验证失败: %s\n", X509_verify_cert_error_string(verify_result));
-    // printf("警告: 当前配置为忽略证书错误\n");
+    // 忽略证书错误
   }
 
 
 }
 
-int parse_https_response_headers(HttpsConnection* conn, HttpResponseInfo* response_info, HttpReadBuffer* remaining_buffer) {
-  if (!conn || !response_info || !remaining_buffer) {
+int parse_https_response_headers(HttpsConnection* https_connection, HttpResponseInfo* response_info, HttpReadBuffer* remaining_buffer) {
+  if (!https_connection || !response_info || !remaining_buffer) {
     fprintf(stderr, "错误: 无效的参数\n");
     return -1;
   }
@@ -344,8 +344,8 @@ int parse_https_response_headers(HttpsConnection* conn, HttpResponseInfo* respon
   char line_buffer[2048];
   int line_result;
 
-  // 1. 读取状态行
-  line_result = ssl_read_line(conn, remaining_buffer, line_buffer, sizeof(line_buffer));
+  // 读取状态行
+  line_result = ssl_read_line(https_connection, remaining_buffer, line_buffer, sizeof(line_buffer));
   if (line_result <= 0) {
     fprintf(stderr, "错误: 无法读取 HTTP 状态行\n");
     return -1;
@@ -361,9 +361,9 @@ int parse_https_response_headers(HttpsConnection* conn, HttpResponseInfo* respon
 
   // printf("HTTP 状态码: %d %s\n", response_info->status_code, response_info->status_message);
 
-  // 2. 读取头部字段
+  // 读取头部字段
   while (1) {
-    line_result = ssl_read_line(conn, remaining_buffer, line_buffer, sizeof(line_buffer));
+    line_result = ssl_read_line(https_connection, remaining_buffer, line_buffer, sizeof(line_buffer));
     if (line_result < 0) {
       fprintf(stderr, "错误: 读取头部字段失败\n");
       return -1;
@@ -387,13 +387,13 @@ int parse_https_response_headers(HttpsConnection* conn, HttpResponseInfo* respon
   return 0;
 }
 
-int ssl_read_line(HttpsConnection* conn, HttpReadBuffer* read_buf, char* line_buffer, size_t line_buffer_size) {
+int ssl_read_line(HttpsConnection* https_connection, HttpReadBuffer* read_buf, char* line_buffer, size_t line_buffer_size) {
   size_t line_pos = 0;
 
   while (line_pos < line_buffer_size - 1) {
     // 如果缓冲区中没有数据，从 SSL 连接读取
     if (read_buf->parse_position >= read_buf->data_length) {
-      ssize_t bytes_received = ssl_recv_data(conn, read_buf->buffer, sizeof(read_buf->buffer));
+      ssize_t bytes_received = ssl_recv_data(https_connection, read_buf->buffer, sizeof(read_buf->buffer));
       if (bytes_received <= 0) {
         return bytes_received; // 错误或连接关闭
       }
@@ -425,11 +425,11 @@ int ssl_read_line(HttpsConnection* conn, HttpReadBuffer* read_buf, char* line_bu
   return -1;
 }
 
-int download_https_content_with_length(HttpsConnection* conn, FILE* output_file, long long content_length, DownloadProgress* progress, HttpReadBuffer* remaining_buffer) {
+int download_https_content_with_length(HttpsConnection* https_connection, FILE* output_file, long long content_length, DownloadProgress* progress, HttpReadBuffer* remaining_buffer) {
   const size_t BUFFER_SIZE = 8192;
   char buffer[BUFFER_SIZE];
 
-  if (!progress || !output_file || !conn) {
+  if (!progress || !output_file || !https_connection) {
     fprintf(stderr, "错误: 无效的参数\n");
     return -1;
   }
@@ -470,7 +470,7 @@ int download_https_content_with_length(HttpsConnection* conn, FILE* output_file,
     }
 
     // 通过 SSL 接收数据
-    ssize_t bytes_received = ssl_recv_data(conn, buffer, bytes_to_receive);
+    ssize_t bytes_received = ssl_recv_data(https_connection, buffer, bytes_to_receive);
 
     if (bytes_received <= 0) {
       clear_progress_line();
@@ -500,8 +500,7 @@ int download_https_content_with_length(HttpsConnection* conn, FILE* output_file,
     time_t current_time = time(NULL);
     static long long last_update_size = 0;
 
-    if (current_time > progress->last_update_time ||
-      progress->downloaded_size - last_update_size > 8192) {
+    if (current_time > progress->last_update_time || progress->downloaded_size - last_update_size > 8192) {
       update_download_progress(progress);
       progress->last_update_time = current_time;
       last_update_size = progress->downloaded_size;
@@ -521,13 +520,13 @@ int download_https_content_with_length(HttpsConnection* conn, FILE* output_file,
   return 0;
 }
 
-int download_https_content_until_close(HttpsConnection* conn, FILE* output_file, DownloadProgress* progress, HttpReadBuffer* remaining_buffer) {
+int download_https_content_until_close(HttpsConnection* https_connection, FILE* output_file, DownloadProgress* progress, HttpReadBuffer* remaining_buffer) {
   const size_t BUFFER_SIZE = 8192;
   char buffer[BUFFER_SIZE];
   int consecutive_zero_reads = 0;  // 连续零读取计数
   const int MAX_ZERO_READS = 3;    // 最大连续零读取次数
 
-  if (!progress || !output_file || !conn) {
+  if (!progress || !output_file || !https_connection) {
     fprintf(stderr, "错误: 无效的参数\n");
     return -1;
   }
@@ -552,13 +551,13 @@ int download_https_content_until_close(HttpsConnection* conn, FILE* output_file,
   }
 
   while (1) {
-    ssize_t bytes_received = ssl_recv_data(conn, buffer, BUFFER_SIZE);
+    ssize_t bytes_received = ssl_recv_data(https_connection, buffer, BUFFER_SIZE);
 
     if (bytes_received == 0) {
       // 没有读取到数据
       consecutive_zero_reads++;
       if (consecutive_zero_reads >= MAX_ZERO_READS) {
-        // 连续多次没有读取到数据，认为连接已关闭
+        // 连接已关闭
         break;
       }
       // 短暂等待后继续尝试
@@ -594,8 +593,7 @@ int download_https_content_until_close(HttpsConnection* conn, FILE* output_file,
     time_t current_time = time(NULL);
     static long long last_update_size = 0;
 
-    if (current_time > progress->last_update_time ||
-      progress->downloaded_size - last_update_size > 8192) {
+    if (current_time > progress->last_update_time || progress->downloaded_size - last_update_size > 8192) {
       update_download_progress(progress);
       progress->last_update_time = current_time;
       last_update_size = progress->downloaded_size;
@@ -681,7 +679,7 @@ int download_file_https(const char* url, const char* output_filename, const char
     HttpResponseInfo response_info = { 0 };
     DownloadProgress progress = { 0 };
     HttpReadBuffer remaining_buffer = { 0 };
-    HttpsConnection* conn = NULL;
+    HttpsConnection* https_connection = NULL;
     FILE* output_file = NULL;
     DownloadResult result = DOWNLOAD_SUCCESS;
 
@@ -704,7 +702,7 @@ int download_file_https(const char* url, const char* output_filename, const char
       cleanup_openssl();
       return DOWNLOAD_ERROR_URL_PARSE;
     }
-    
+
     printf("%sHost: %s%s%s%s, %sPort: %s%s%d%s, %sPath: %s%s%s%s\n",
       BOLD, RESET, BLUE, url_info.host, RESET,
       BOLD, RESET, BLUE, url_info.port, RESET,
@@ -733,8 +731,8 @@ int download_file_https(const char* url, const char* output_filename, const char
     }
 
     // 建立 HTTPS 连接
-    conn = create_https_connection(url_info.host, url_info.port);
-    if (!conn) {
+    https_connection = create_https_connection(url_info.host, url_info.port);
+    if (!https_connection) {
       fprintf(stderr, "%s错误: 无法连接到服务器%s\n", RED, RESET);
       result = DOWNLOAD_ERROR_CONNECTION;
       goto cleanup;
@@ -750,14 +748,14 @@ int download_file_https(const char* url, const char* output_filename, const char
     }
 
     // 发送 HTTP 请求
-    if (ssl_send_data(conn, request_buffer, request_length) != 0) {
+    if (ssl_send_data(https_connection, request_buffer, request_length) != 0) {
       fprintf(stderr, "%s错误: 发送HTTP请求失败%s\n", RED, RESET);
       result = DOWNLOAD_ERROR_HTTP_REQUEST;
       goto cleanup;
     }
 
     // 解析 HTTP 响应头
-    if (parse_https_response_headers(conn, &response_info, &remaining_buffer) != 0) {
+    if (parse_https_response_headers(https_connection, &response_info, &remaining_buffer) != 0) {
       fprintf(stderr, "%s错误: 解析HTTP响应失败%s\n", RED, RESET);
       result = DOWNLOAD_ERROR_HTTP_RESPONSE;
       goto cleanup;
@@ -783,9 +781,9 @@ int download_file_https(const char* url, const char* output_filename, const char
         redirect_url[sizeof(redirect_url) - 1] = '\0';
 
         // 关闭当前连接
-        if (conn) {
-          close_https_connection(conn);
-          conn = NULL;
+        if (https_connection) {
+          close_https_connection(https_connection);
+          https_connection = NULL;
         }
 
         // 更新当前URL并继续循环
@@ -830,7 +828,7 @@ int download_file_https(const char* url, const char* output_filename, const char
     // 下载内容
     if (response_info.content_length > 0) {
       // 已知长度的下载
-      if (download_https_content_with_length(conn, output_file,
+      if (download_https_content_with_length(https_connection, output_file,
         response_info.content_length, &progress, &remaining_buffer) != 0) {
         fprintf(stderr, "%s错误: 下载过程中发生错误%s\n", RED, RESET);
         result = DOWNLOAD_ERROR_NETWORK;
@@ -839,7 +837,7 @@ int download_file_https(const char* url, const char* output_filename, const char
     }
     else {
       // 未知长度的下载
-      if (download_https_content_until_close(conn, output_file, &progress, &remaining_buffer) != 0) {
+      if (download_https_content_until_close(https_connection, output_file, &progress, &remaining_buffer) != 0) {
         fprintf(stderr, "%s错误: 下载过程中发生错误%s\n", RED, RESET);
         result = DOWNLOAD_ERROR_NETWORK;
         goto cleanup;
@@ -850,8 +848,8 @@ int download_file_https(const char* url, const char* output_filename, const char
     print_download_summary(&progress, 1);
 
   cleanup:
-    if (conn) {
-      close_https_connection(conn);
+    if (https_connection) {
+      close_https_connection(https_connection);
     }
     if (output_file) {
       fclose(output_file);

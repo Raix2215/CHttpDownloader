@@ -55,15 +55,4 @@ int download_content_until_close(int sockfd, FILE* output_file, DownloadProgress
  */
 int download_file_http(const char* url, const char* output_filename, const char* download_dir, int redirect_count);
 
-// TODO
-/**
- * HTTPS文件下载函数
- * @param url 下载URL
- * @param output_filename 输出文件名（不包含路径）
- * @param download_dir 下载目录，如果为NULL或空字符串则使用当前工作目录
- * @param redirect_count 重定向计数（内部使用）
- * @return 下载结果状态码
- */
-int download_file_https(const char* url, const char* output_filename, const char* download_dir, int redirect_count);
-
 #endif

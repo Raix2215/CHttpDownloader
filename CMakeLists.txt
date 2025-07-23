@@ -3,11 +3,11 @@ project(CHttpDownloader VERSION 0.1.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 11)
 
-# 查找 OpenSSL 库
+# 查找OpenSSL库
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
 
-# 如果找不到 OpenSSL，显示错误信息
+# 如果找不到OpenSSL，显示错误信息
 if(NOT OpenSSL_FOUND)
     message(FATAL_ERROR "OpenSSL 库未找到。请安装 OpenSSL 开发包：\n"
                         "Ubuntu/Debian: sudo apt-get install libssl-dev\n"
@@ -32,19 +32,14 @@ set(SOURCE_FILES
     main.c
 )
 
-# 主程序
 add_executable(CHttpDownloader ${SOURCE_FILES})
 
-# 链接 OpenSSL 库
+# 链接OpenSSL库
 target_link_libraries(CHttpDownloader 
     OpenSSL::SSL 
     OpenSSL::Crypto
     Threads::Threads
 )
 
-# 添加编译定义以启用 HTTPS 支持
+# 启用HTTPS支持
 target_compile_definitions(CHttpDownloader PRIVATE WITH_OPENSSL=1)
-
-# 显示找到的库信息
-message(STATUS "OpenSSL 版本: ${OPENSSL_VERSION}")
-message(STATUS "线程库: ${CMAKE_THREAD_LIBS_INIT}")

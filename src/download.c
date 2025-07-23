@@ -36,7 +36,6 @@ int recv_full_data(int sockfd, void* buffer, size_t total_length, int timeout_ms
     buf_ptr += bytes_received;
     remaining -= bytes_received;
   }
-
   return 0;
 }
 
@@ -111,12 +110,11 @@ int download_content_with_length(int sockfd, FILE* output_file, long long conten
     // 更新进度
     progress->downloaded_size += bytes_received;
 
-    // 定期更新进度显示（每100ms或每接收一定数据量）
+    // 定期更新进度显示（每接收一定数据量）
     time_t current_time = time(NULL);
     static long long last_update_size = 0;
 
-    if (current_time > progress->last_update_time ||
-      progress->downloaded_size - last_update_size > 8192) {
+    if (current_time > progress->last_update_time || progress->downloaded_size - last_update_size > 8192) {
       update_download_progress(progress);
       progress->last_update_time = current_time;
       last_update_size = progress->downloaded_size;
@@ -151,7 +149,7 @@ int download_content_until_close(int sockfd, FILE* output_file, DownloadProgress
     return -1;
   }
 
-  // 使用fcntl检查socket是否真的有效
+  // 使用fcntl检查
   int flags = fcntl(sockfd, F_GETFL);
   if (flags == -1) {
     fprintf(stderr, "错误: socket描述符无效或已关闭 %d\n", sockfd);
@@ -181,7 +179,7 @@ int download_content_until_close(int sockfd, FILE* output_file, DownloadProgress
   }
 
   while (1) {
-    // 再次检查socket有效性
+    // 检查socket有效性
     flags = fcntl(sockfd, F_GETFL);
     if (flags == -1) {
       clear_progress_line();
@@ -214,8 +212,7 @@ int download_content_until_close(int sockfd, FILE* output_file, DownloadProgress
     time_t current_time = time(NULL);
     static long long last_update_size = 0;
 
-    if (current_time > progress->last_update_time ||
-      progress->downloaded_size - last_update_size > 8192) {
+    if (current_time > progress->last_update_time || progress->downloaded_size - last_update_size > 8192) {
       update_download_progress(progress);
       progress->last_update_time = current_time;
       last_update_size = progress->downloaded_size;
@@ -433,9 +430,7 @@ int download_file_http(const char* url, const char* output_filename, const char*
     // 下载内容
     if (response_info.content_length > 0) {
       // 已知长度的下载
-      if (download_content_with_length(sockfd, output_file,
-        response_info.content_length,
-        &progress, &remaining_buffer) != 0) {
+      if (download_content_with_length(sockfd, output_file, response_info.content_length, &progress, &remaining_buffer) != 0) {
         fprintf(stderr, "%s错误: 下载过程中发生错误%s\n", RED, RESET);
         result = DOWNLOAD_ERROR_NETWORK;
         goto cleanup_iteration;
